@@ -7,5 +7,6 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 .project-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.footer-links{display:flex;gap:18px}
 @media(max-width:620px){.project-actions{justify-content:flex-start;margin-top:18px}.footer-links{width:100%;justify-content:space-between}}
+.project-nav{margin-top:22px;padding-top:20px;border-top:1px solid var(--border)}.project-nav .nav-label{margin-bottom:8px}.project-nav a{display:flex;align-items:center;gap:13px;padding:8px 12px;color:var(--muted);font-size:12px;text-decoration:none;border-radius:var(--radius)}.project-nav a:hover{color:var(--text);background:var(--surface)}.project-nav small{margin-left:auto;font:11px var(--mono)}
 @media(max-width:620px){.sidebar nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;gap:2px}.sidebar nav a{font-size:10px;padding:5px 7px;min-height:34px}.sidebar nav a span{overflow:hidden;text-overflow:ellipsis}.sidebar{padding:5px 9px}html{scroll-padding-top:158px}.search input{font-size:16px}}
 
