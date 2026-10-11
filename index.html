@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rocsy — One machine. Every kind of local AI.</title>
+<meta name="description" content="Rocsy is a self-hosted stack that runs image, video, music, voice and LLM workloads on a single Radeon GPU — one queue, so nothing fights for the card.">
+<meta property="og:title" content="Rocsy — One machine. Every kind of local AI.">
+<meta property="og:description" content="Self-hosted AI studios on one AMD GPU: video, image, music, voice, LLMs and LoRA training, sharing the hardware through a single GPU queue.">
+<meta property="og:image" content="assets/rocsy-v2-512.png">
+<meta name="theme-color" content="#0a1013">
+<link rel="icon" type="image/svg+xml" href="assets/rocsy-v2.svg">
+<link rel="apple-touch-icon" href="assets/rocsy-v2-touch-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a1013;
+  --bg-2: #0d1518;
+  --surface: #101a1e;
+  --surface-2: #152228;
+  --ink: #ecf7f5;
+  --muted: #93a9ad;
+  --faint: rgba(147, 169, 173, .13);
+  --border: #1e2c32;
+  --border-strong: #2c4048;
+  --accent: #5bddd0;
+  --accent-ink: #03211e;
+  --accent-dim: rgba(91, 221, 208, .13);
+  --ok: #86d06a;
+  --radius: 14px;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --max: 1120px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 88px; scrollbar-color: var(--surface-2) var(--bg); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+/* film grain — adds depth to large dark fields */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: .035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 6px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+::selection { background: var(--accent); color: var(--accent-ink); }
+a { color: inherit; }
+img, svg { display: block; }
+.mono { font-family: var(--font-mono); }
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+/* ---------- nav ---------- */
+header.nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: var(--max); margin: 0 auto; padding: 0 24px;
+  height: 66px; display: flex; align-items: center; gap: 24px;
+}
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 700; letter-spacing: 0.01em; flex-shrink: 0; }
+.brand img { width: 30px; height: 30px; border-radius: 7px; transition: transform .25s ease; }
+.brand:hover img { transform: rotate(-8deg) scale(1.06); }
+.nav-links { display: flex; gap: 2px; margin-left: auto; align-items: center; }
+.nav-links a {
+  position: relative;
+  text-decoration: none; color: var(--muted); font-size: 14.5px;
+  padding: 10px 13px; border-radius: 8px; min-height: 44px;
+  display: inline-flex; align-items: center;
+  transition: color .15s ease, background .15s ease;
+}
+.nav-links a::after {
+  content: ""; position: absolute; left: 13px; right: 13px; bottom: 6px; height: 2px;
+  border-radius: 2px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left; transition: transform .2s ease;
+}
+.nav-links a:hover { color: var(--ink); background: var(--surface-2); }
+.nav-links a.active { color: var(--accent); }
+.nav-links a.active::after { transform: scaleX(1); }
+.nav-links a:focus-visible, .btn:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px;
+}
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 46px; padding: 0 20px; border-radius: 9px;
+  font-family: var(--font-display); font-weight: 500; font-size: 14.5px;
+  text-decoration: none; cursor: pointer; border: 1px solid transparent;
+  transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+.btn-solid { background: var(--accent); color: var(--accent-ink); }
+.btn-solid:hover { background: #74e6da; box-shadow: 0 10px 30px -10px rgba(91, 221, 208, .45); transform: translateY(-1px); }
+.btn-ghost { border-color: var(--border-strong); color: var(--ink); background: transparent; }
+.btn-ghost:hover { border-color: var(--muted); background: var(--surface); transform: translateY(-1px); }
+.btn:active { transform: translateY(1px); }
+
+/* ---------- hero ---------- */
+.hero { padding: 110px 0 88px; position: relative; overflow: clip; }
+.hero::before {
+  content: ""; position: absolute; inset: -30% 55% 30% -20%;
+  background: radial-gradient(closest-side, rgba(91, 221, 208, .10), transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(147, 169, 173, .055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(147, 169, 173, .055) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 65% at 25% 8%, #000 0%, transparent 68%);
+  mask-image: radial-gradient(ellipse 85% 65% at 25% 8%, #000 0%, transparent 68%);
+}
+.hero-grid { display: grid; grid-template-columns: 1.12fr .88fr; gap: 60px; align-items: center; position: relative; z-index: 1; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--accent); margin: 0 0 20px;
+  display: flex; align-items: center; gap: 9px;
+}
+.eyebrow .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(91, 221, 208, .5);
+  animation: pulse 2.6s ease-out infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(91, 221, 208, .45); }
+  70% { box-shadow: 0 0 0 9px rgba(91, 221, 208, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(91, 221, 208, 0); }
+}
+h1 {
+  font-size: clamp(40px, 5.6vw, 66px); line-height: 1.04; letter-spacing: -0.028em;
+  margin: 0 0 24px; font-weight: 700; text-wrap: balance;
+}
+h1 .hl { color: var(--accent); }
+.lede { font-size: 18.5px; color: var(--muted); max-width: 33em; margin: 0 0 34px; text-wrap: pretty; }
+.lede strong { color: var(--ink); font-weight: 500; }
+.hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-meta {
+  margin: 34px 0 0; padding: 14px 0 0; border-top: 1px solid var(--faint);
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--muted);
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.hero-meta .sep { color: var(--border-strong); }
+.hero-meta b { color: var(--accent); font-weight: 500; }
+
+/* queue card (hero visual — the product's core idea, drawn honestly) */
+.queue-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(236, 247, 245, .025), transparent 30%), var(--surface);
+  border: 1px solid var(--border); border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 30px 70px -34px rgba(0, 0, 0, .85);
+  transition: border-color .2s ease;
+}
+.queue-card:hover { border-color: var(--border-strong); }
+.queue-card::before {
+  content: ""; position: absolute; top: -1px; left: 12%; right: 12%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(91, 221, 208, .55), transparent);
+}
+.queue-card > header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
+}
+.gpu-meter { display: flex; align-items: center; gap: 8px; }
+.gpu-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ok);
+  box-shadow: 0 0 8px rgba(134, 208, 106, .6);
+}
+.q-item { border-radius: 8px; transition: background .12s ease; }
+.q-item:hover { background: var(--surface-2); }
+.q-item + .q-item { border-top: 1px solid var(--faint); }
+.q-row {
+  display: grid; grid-template-columns: 74px 1fr auto; gap: 12px; align-items: center;
+  padding: 11px 8px; font-size: 14px;
+}
+.q-row .ref { font-family: var(--font-mono); color: var(--muted); font-size: 12.5px; }
+.q-row .job { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-state { font-family: var(--font-mono); font-size: 11.5px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--border-strong); color: var(--muted); }
+.q-state.run { color: var(--accent); border-color: rgba(91, 221, 208, .4); position: relative; overflow: hidden; }
+.q-state.run::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(91, 221, 208, .18) 50%, transparent 80%);
+  animation: sweep 2.4s ease-in-out infinite;
+}
+@keyframes sweep { 0% { transform: translateX(-100%);} 100% { transform: translateX(100%);} }
+.q-bar { height: 2px; margin: 0 8px 9px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.q-bar i {
+  display: block; height: 100%; width: 34%; border-radius: 2px;
+  background: linear-gradient(90deg, rgba(91, 221, 208, .25), var(--accent));
+  animation: qprog 2.8s ease-in-out infinite;
+}
+@keyframes qprog {
+  0% { transform: translateX(-40%); width: 30%; }
+  55% { width: 52%; }
+  100% { transform: translateX(320%); width: 30%; }
+}
+.q-note { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin: 12px 6px 0; }
+.q-note em { color: var(--accent); font-style: normal; }
+
+/* ---------- sections ---------- */
+section { padding: 92px 0; border-top: 1px solid var(--border); }
+.sec-head { max-width: 42em; margin-bottom: 52px; }
+.sec-head .eyebrow { margin-bottom: 14px; }
+h2 { font-size: clamp(28px, 3.6vw, 42px); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 14px; font-weight: 700; text-wrap: balance; }
+.sec-head p { color: var(--muted); font-size: 16.5px; margin: 0; text-wrap: pretty; }
+
+/* story */
+.story {
+  background: linear-gradient(180deg, rgba(236, 247, 245, .02), transparent 40%), var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: clamp(30px, 5vw, 60px);
+}
+.story p { font-size: 17.5px; color: #d5e4e2; margin: 0 0 1.2em; max-width: 44em; text-wrap: pretty; }
+.story p:last-child { margin-bottom: 0; }
+.story p:first-of-type { font-size: 20px; color: var(--ink); }
+.story p:first-of-type::first-letter { color: var(--accent); font-weight: 700; }
+
+/* studios ledger */
+.ledger { border-top: 1px solid var(--border); }
+.l-row {
+  display: grid; grid-template-columns: 46px 146px 104px 1fr 26px; gap: 18px; align-items: baseline;
+  padding: 21px 10px; border-bottom: 1px solid var(--border); border-radius: 8px;
+  transition: background .15s ease, padding-left .15s ease;
+}
+.l-row:hover { background: var(--surface); padding-left: 18px; }
+.l-idx { font-family: var(--font-mono); font-size: 12px; color: var(--muted); transition: color .15s ease; }
+.l-row:hover .l-idx { color: var(--accent); }
+.l-name { font-weight: 700; font-size: 17.5px; letter-spacing: -0.01em; }
+.l-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; color: var(--accent); text-transform: uppercase; opacity: .85; }
+.l-desc { color: var(--muted); font-size: 15px; text-wrap: pretty; }
+.l-desc b { color: var(--ink); font-weight: 500; }
+.l-arrow { font-family: var(--font-mono); color: var(--accent); opacity: 0; transform: translateX(-6px); transition: opacity .15s ease, transform .15s ease; }
+.l-row:hover .l-arrow { opacity: 1; transform: none; }
+
+/* queue facts */
+.facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.fact { background: var(--surface); padding: 28px 28px 32px; transition: background .15s ease; }
+.fact:hover { background: var(--surface-2); }
+.fact .n { font-family: var(--font-mono); font-size: 12px; color: var(--accent); margin: 0 0 14px; letter-spacing: .1em; }
+.fact h3 { margin: 0 0 8px; font-size: 17.5px; font-weight: 700; letter-spacing: -0.01em; }
+.fact p { margin: 0; color: var(--muted); font-size: 14.5px; text-wrap: pretty; }
+.fact code { font-family: var(--font-mono); font-size: 12.5px; background: var(--bg-2); border: 1px solid var(--border-strong); padding: 1px 7px; border-radius: 5px; color: var(--accent); }
+
+/* stack / terminal */
+.stack-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 44px; align-items: start; }
+.term {
+  background: #080d10; border: 1px solid var(--border); border-radius: 12px;
+  font-family: var(--font-mono); font-size: 12.8px; line-height: 1.7;
+  overflow: hidden; box-shadow: 0 20px 50px -30px rgba(0, 0, 0, .8);
+}
+.term-bar { display: flex; align-items: center; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.term-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border-strong); }
+.term-bar .t { margin-left: 8px; font-size: 11px; color: var(--muted); letter-spacing: .08em; }
+.term pre { margin: 0; padding: 20px; overflow-x: auto; color: #b4c6cc; }
+.term .c { color: #5a6f77; }
+.term .a { color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.chip {
+  font-family: var(--font-mono); font-size: 12.5px; color: var(--muted);
+  border: 1px solid var(--border); background: var(--surface);
+  padding: 7px 13px; border-radius: 99px;
+  transition: transform .14s ease, border-color .14s ease, color .14s ease;
+}
+.chip:hover { transform: translateY(-2px); border-color: var(--border-strong); color: var(--ink); }
+.chip.hot { color: var(--accent); border-color: rgba(91, 221, 208, .35); }
+.chip.hot:hover { border-color: rgba(91, 221, 208, .6); }
+.hw { margin-top: 28px; padding: 20px 22px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); position: relative; overflow: hidden; }
+.hw::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, rgba(91, 221, 208, .5), transparent 60%); }
+.hw .mono { font-size: 11.5px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+.hw p { margin: 9px 0 0; font-size: 15px; color: #d5e4e2; text-wrap: pretty; }
+
+/* run */
+.run-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: start; }
+.run-copy p { color: var(--muted); font-size: 16px; text-wrap: pretty; margin-top: 0; }
+.run-copy ul { margin: 18px 0 0; padding-left: 20px; color: var(--muted); font-size: 15px; }
+.run-copy li { margin-bottom: 10px; }
+.run-copy li::marker { color: var(--accent); }
+.run-copy li b { color: var(--ink); font-weight: 500; }
+
+/* support */
+.support {
+  display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-wrap: wrap;
+  background: linear-gradient(180deg, rgba(236, 247, 245, .02), transparent 40%), var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: clamp(30px, 4.5vw, 52px);
+  position: relative; overflow: hidden;
+}
+.support::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, rgba(91, 221, 208, .5), transparent 55%); }
+.support-copy { max-width: 34em; }
+.support-copy h2 { margin-bottom: 12px; }
+.support-copy p { color: var(--muted); font-size: 16px; margin: 0; text-wrap: pretty; }
+.support-copy p b { color: var(--ink); font-weight: 500; }
+.btn-kofi { flex-shrink: 0; }
+.btn-kofi svg { width: 18px; height: 18px; }
+.support-side { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.support-side .mono { font-size: 11.5px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+
+/* footer */
+footer { border-top: 1px solid var(--border); padding: 44px 0 60px; }
+.foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+.foot img { width: 26px; height: 26px; border-radius: 6px; }
+.foot .sp { flex: 1; }
+.foot a { color: var(--muted); text-decoration: none; padding: 8px 0; transition: color .15s ease; }
+.foot a:hover { color: var(--accent); }
+.foot .mono { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; opacity: .75; }
+
+/* reveal */
+.rv { opacity: 0; transform: translateY(16px); transition: opacity .55s ease, transform .55s ease; }
+.rv.in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rv { opacity: 1; transform: none; transition: none; }
+  .q-state.run::after, .q-bar i, .eyebrow .dot { animation: none; }
+  .btn, .chip, .l-row, .brand img { transition: none; }
+}
+
+@media (max-width: 900px) {
+  .hero-grid, .stack-grid, .run-grid { grid-template-columns: 1fr; }
+  .hero { padding: 68px 0 60px; }
+  .facts { grid-template-columns: 1fr; }
+  .l-row { grid-template-columns: 1fr; gap: 4px; padding: 18px 8px; }
+  .l-idx, .l-arrow { display: none; }
+  .l-row:hover { padding-left: 8px; }
+  .nav-inner { gap: 12px; }
+  .nav-links { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links a { font-size: 13.5px; padding: 10px 10px; white-space: nowrap; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top">
+      <img src="assets/rocsy-v2.svg" alt="Rocsy logo" width="30" height="30">
+      Rocsy
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#story" data-spy="story">Why</a>
+      <a href="#studios" data-spy="studios">Studios</a>
+      <a href="#queue" data-spy="queue">GPU queue</a>
+      <a href="#stack" data-spy="stack">Stack</a>
+      <a href="#run" data-spy="run">Run it</a>
+      <a href="#support" data-spy="support">Support</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- hero -->
+  <section class="hero" style="border-top: none;">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow"><span class="dot"></span>Self-hosted · ROCm · one GPU</p>
+        <h1>One machine.<br><span class="hl">Every kind of local AI.</span></h1>
+        <p class="lede">Rocsy runs <strong>video, image, music, voice and LLM workloads</strong> on a single Radeon card — behind one login, with one GPU queue, so nothing fights for the hardware.</p>
+        <div class="hero-cta">
+          <a class="btn btn-solid" href="#studios">See the studios</a>
+          <a class="btn btn-ghost" href="#run">Run it yourself</a>
+        </div>
+        <p class="hero-meta"><b>9</b> studios <span class="sep">/</span> <b>1</b> GPU <span class="sep">/</span> <b>0</b> VRAM collisions</p>
+      </div>
+
+      <div class="queue-card rv" aria-label="Illustration of the shared GPU queue">
+        <header>
+          <span>/Queue</span>
+          <span class="gpu-meter"><span class="gpu-dot"></span> RX 7900 XTX · busy</span>
+        </header>
+        <div class="q-item">
+          <div class="q-row"><span class="ref">vid3</span><span class="job">MiniMax H3 clip — 10 s, 16:9</span><span class="q-state run">rendering</span></div>
+          <div class="q-bar" aria-hidden="true"><i></i></div>
+        </div>
+        <div class="q-item">
+          <div class="q-row"><span class="ref">mus1</span><span class="job">YuE2 song — 120 s, lyrics</span><span class="q-state">queued</span></div>
+        </div>
+        <div class="q-item">
+          <div class="q-row"><span class="ref">krea2</span><span class="job">Krea 2 image set ×4</span><span class="q-state">queued</span></div>
+        </div>
+        <div class="q-item">
+          <div class="q-row"><span class="ref">llama</span><span class="job">model swap → Qwen3.8 Flash</span><span class="q-state">queued</span></div>
+        </div>
+        <p class="q-note">One card, one job at a time. Everything else waits in line — <em>no VRAM collisions.</em></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- story -->
+  <section id="story">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <p class="eyebrow">01 — Why Rocsy exists</p>
+        <h2>Built out of frustration.</h2>
+      </div>
+      <div class="story rv">
+        <p>Rocsy came from my own frustration trying to get MiniMax H3 running well on a Radeon RX 7900 XTX.</p>
+        <p>I spent about a month dealing with ROCm setup, compatibility problems, and performance tweaks before I had something I was happy with. Even after that, I was still spending too much time managing ComfyUI and different workloads instead of actually using the machine.</p>
+        <p>Rocsy is my attempt to make that whole process simpler. It handles setup and optimization, and it includes a GPU queue so image, video, music, voice, and LLM jobs can all share the same hardware without stepping on each other.</p>
+        <p>The main goal is to make powerful local AI more practical for one person with one machine. You should be able to queue up what you want to run, leave it alone, and let Rocsy handle the messy parts in the background.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- studios -->
+  <section id="studios">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <p class="eyebrow">02 — The studios</p>
+        <h2>Nine apps, one front door.</h2>
+        <p>Each studio is a small FastAPI service behind a single password-gated gateway. They share one ComfyUI, one model library, and one GPU queue.</p>
+      </div>
+      <div class="ledger rv" data-stagger>
+        <div class="l-row"><span class="l-idx">01</span><span class="l-name">Vid</span><span class="l-tag">Video</span><span class="l-desc"><b>MiniMax H3</b> and LTX-2.5 generation. Agentic mode plans, renders, reviews and fixes clips itself; post-edit, GPU Whisper captions, and montage for the final cut.</span><span class="l-arrow">→</span></div>
+        <div class="l-row"><span class="l-idx">02</span><span class="l-name">Krea</span><span class="l-tag">Image</span><span class="l-desc"><b>Krea 2 Turbo</b>, Lustify and Qwen Image, with LoRA support and reference images.</span><span class="l-arrow">→</span></div>
+        <div class="l-row"><span class="l-idx">03</span><span class="l-name">Mus</span><span class="l-tag">Music</span><span class="l-desc"><b>YuE2</b> and <b>MiniMax Music 3</b> songs from a style prompt and lyrics.</span><span class="l-arrow">→</span></div>
+        <div class="l-row"><span class="l-idx">04</span><span class="l-name">Voice</span><span class="l-tag">Voice</span><span class="l-desc"><b>Qwen3-TTS</b> speech and voice characters, with GPU music removal for reference clips.</span><span class="l-arrow">→</span></div>
+        <div class="l-row"><span class="l-idx">05</span><span class="l-name">Motion</span><span class="l-tag">Video · code</span><span class="l-desc"><b>Remotion</b> (React) projects rendered on the GPU — Chrome draws frames, ffmpeg encodes with VA-API. Overlays, kinetic typography, title cards.</span><span class="l-arrow">→</span></div>
+        <div class="l-row"><span class="l-idx">06</span><span class="l-name">Trainer</span><span class="l-tag">LoRA</span><span class="l-desc"><b>ROCm LoRA training</b> (kohya sd-scripts) with dataset management and vision-model auto-tagging. Opt-in — training competes for VRAM.</span><span class="l-arrow">→</span></div>
+        <div class="l-row"><span class="l-idx">07</span><span class="l-name">Llama</span><span class="l-tag">LLM</span><span class="l-desc"><b>llama-swap</b> serving GGUFs through a custom RDNA-boost llama.cpp build. Per-model parameters, core-backend swaps, benchmarked tuning.</span><span class="l-arrow">→</span></div>
+        <div class="l-row"><span class="l-idx">08</span><span class="l-name">Agent</span><span class="l-tag">Chat</span><span class="l-desc">A <b>Hermes-driven agent</b> that drives every studio from a chat brief — “song, then clips, then montage, then captions” — and renders while you're away. Its jobs get queue priority.</span><span class="l-arrow">→</span></div>
+        <div class="l-row"><span class="l-idx">09</span><span class="l-name">Models</span><span class="l-tag">Hub</span><span class="l-desc"><b>Civitai and Hugging Face</b> downloads straight into ComfyUI's model folder, with hardware-fit and update checks.</span><span class="l-arrow">→</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- queue -->
+  <section id="queue">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <p class="eyebrow">03 — The GPU queue</p>
+        <h2>One card. One job at a time.<br>No collisions.</h2>
+        <p>A dedicated queue service sits in front of every studio. You queue work from anywhere on the site and walk away — Rocsy feeds the GPU in order.</p>
+      </div>
+      <div class="facts rv" data-stagger>
+        <div class="fact"><p class="n">01</p><h3>FIFO, with priorities</h3><p>Jobs run in the order you asked for them. Agent work can jump the line; everything else waits its turn.</p></div>
+        <div class="fact"><p class="n">02</p><h3>Locked, not crashed</h3><p>A second studio starting mid-render gets <code>423 Locked</code> — a clean “wait your turn”, not a VRAM crash.</p></div>
+        <div class="fact"><p class="n">03</p><h3>Locks expire</h3><p>Every lock carries a TTL. If an app crashes without releasing, the queue frees itself instead of wedging the machine.</p></div>
+        <div class="fact"><p class="n">04</p><h3>Visible</h3><p>A <code>/Queue</code> page shows what's running, what's waiting, and what's next. Push notifications land when jobs finish.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- stack -->
+  <section id="stack">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <p class="eyebrow">04 — How it's built</p>
+        <h2>Containers orchestrate.<br>The metal computes.</h2>
+        <p>Everything listens on loopback behind the gateway; remote access goes through a Cloudflare Tunnel. GPU-heavy work — ComfyUI, llama.cpp — runs natively on the host where ROCm is fastest.</p>
+      </div>
+      <div class="stack-grid">
+        <div class="term rv" aria-label="Stack topology">
+          <div class="term-bar"><i></i><i></i><i></i><span class="t">topology</span></div>
+          <pre><span class="c"># topology</span>
+browser <span class="c">── Cloudflare Tunnel ──</span> <span class="a">gateway</span> :8080
+  <span class="c">│  login · proxy · web push</span>
+  <span class="c">├─</span> Vid · Mus · Krea · Trainer · Voice
+  <span class="c">├─</span> Agent · Motion · Models
+  <span class="c">└─</span> <span class="a">queue</span> :8600 <span class="c">── one GPU, one job</span>
+        <span class="c">│</span>
+        <span class="a">framework</span> :8700 <span class="c">· shared media ops</span>
+        <span class="a">llama</span> :8400    <span class="c">· llama-swap + RDNA-boost</span>
+        <span class="c">│</span>
+   host-native: ComfyUI · llama.cpp <span class="c">(ROCm)</span></pre>
+        </div>
+        <div class="rv">
+          <div class="chips">
+            <span class="chip hot">ROCm · gfx1100</span>
+            <span class="chip">FastAPI</span>
+            <span class="chip">Docker Compose</span>
+            <span class="chip">ComfyUI</span>
+            <span class="chip">llama.cpp RDNA-boost</span>
+            <span class="chip">llama-swap</span>
+            <span class="chip">MiniMax H3</span>
+            <span class="chip">LTX-2.5</span>
+            <span class="chip">YuE2</span>
+            <span class="chip">Krea 2 Turbo</span>
+            <span class="chip">Qwen3-TTS</span>
+            <span class="chip">Remotion</span>
+            <span class="chip">GPU Whisper</span>
+            <span class="chip">Cloudflare Tunnel</span>
+            <span class="chip">Web Push</span>
+            <span class="chip">Hermes Agent</span>
+          </div>
+          <div class="hw">
+            <span class="mono">Built and tuned on</span>
+            <p>A single Radeon RX 7900 XTX (24 GB, gfx1100) on Linux. Stock settings leave performance on the table on this card — the RDNA-tuned llama.cpp build and per-model parameter pages exist because of it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- run -->
+  <section id="run">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <p class="eyebrow">05 — Run it</p>
+        <h2>Self-host on your own GPU.</h2>
+      </div>
+      <div class="run-grid">
+        <div class="run-copy rv">
+          <p>Rocsy is a Docker Compose stack. ComfyUI runs natively alongside it; the Trainer is opt-in because its ROCm image is large and training competes for VRAM.</p>
+          <ul>
+            <li><b>One password</b> gates the whole site; sessions ride a signed cookie.</li>
+            <li><b>Everything on loopback</b> — the only public surface is the gateway, reached through the tunnel.</li>
+            <li><b>Data stays on the host</b> — outputs, logs and datasets are bind-mounted, not trapped in containers.</li>
+          </ul>
+        </div>
+        <div class="term rv" aria-label="Setup commands">
+          <div class="term-bar"><i></i><i></i><i></i><span class="t">setup</span></div>
+          <pre><span class="c"># secrets: MASTER_PASSWORD, COOKIE_SECRET,</span>
+<span class="c"># QUEUE_INTERNAL_SECRET, LLAMA_API_KEY</span>
+$ <span class="a">cp</span> .env.example .env
+
+<span class="c"># bring the stack up</span>
+$ <span class="a">docker</span> compose up -d --build
+
+<span class="c"># trainer (opt-in)</span>
+$ <span class="a">docker</span> compose --profile trainer up -d --build trainer
+
+<span class="c"># log in, open a studio, queue work</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- support -->
+  <section id="support">
+    <div class="wrap">
+      <div class="support rv">
+        <div class="support-copy">
+          <p class="eyebrow">06 — Support</p>
+          <h2>Keep the GPU warm.</h2>
+          <p>Rocsy is a <b>one-person project</b>, built on one very hard-working card. If it saves you the month of ROCm debugging I already went through, a coffee is the nicest way to say keep going.</p>
+        </div>
+        <div class="support-side">
+          <a class="btn btn-solid btn-kofi" href="https://ko-fi.com/bittybunnybytes" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h12v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 4.5v1.5M12 4.5v1.5"/></svg>
+            Buy me a coffee
+          </a>
+          <span class="mono">ko-fi.com/bittybunnybytes</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <img src="assets/rocsy-v2.svg" alt="" width="26" height="26">
+    <span>Rocsy — one person's machine, running everything.</span>
+    <span class="sp"></span>
+    <a href="https://ko-fi.com/bittybunnybytes" rel="noopener">Ko-fi</a>
+    <span class="mono">ROCm · gfx1100 · one GPU</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // stagger delays for grouped children
+  document.querySelectorAll("[data-stagger]").forEach(function (group) {
+    Array.prototype.forEach.call(group.children, function (child, i) {
+      child.classList.add("rv");
+      child.style.transitionDelay = Math.min(i * 55, 440) + "ms";
+    });
+  });
+
+  var reveal = document.querySelectorAll(".rv");
+  if (reduced || !("IntersectionObserver" in window)) {
+    reveal.forEach(function (el) { el.classList.add("in"); el.style.transitionDelay = ""; });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          var el = e.target;
+          el.classList.add("in");
+          setTimeout(function () { el.style.transitionDelay = ""; }, 900);
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.12 });
+    reveal.forEach(function (el) { io.observe(el); });
+  }
+
+  // scrollspy
+  var links = Array.prototype.slice.call(document.querySelectorAll("[data-spy]"));
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute("data-spy")] = a; });
+  if ("IntersectionObserver" in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          links.forEach(function (a) { a.classList.remove("active"); });
+          var a = map[e.target.id];
+          if (a) a.classList.add("active");
+        }
+      });
+    }, { rootMargin: "-38% 0px -55% 0px" });
+    Object.keys(map).forEach(function (id) {
+      var s = document.getElementById(id);
+      if (s) spy.observe(s);
+    });
+  }
+})();
+</script>
+</body>
+</html>
