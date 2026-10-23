@@ -75,6 +75,17 @@ $$(".copy").forEach((button) => button.addEventListener("click", async () => {
   setTimeout(() => { button.textContent = "Copy"; }, 1600);
 }));
 
+$$(".copy-inline").forEach((button) => button.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(button.dataset.copy);
+    button.textContent = "Copied";
+    announce("Install command copied");
+  } catch {
+    button.textContent = "Select";
+  }
+  setTimeout(() => { button.textContent = "Copy"; }, 1600);
+}));
+
 // Hero queue: an illustration that cycles through example jobs.
 const EXAMPLES = [
   ["t-video", "Video", "Ocean cliffs at dusk · 10 s"],

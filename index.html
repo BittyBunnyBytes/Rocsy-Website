@@ -51,6 +51,7 @@
           Donate on Ko-fi
         </a>
       </div>
+      <div class="hero-cmd"><code>curl -fsSL https://rocsy.rocks/install.sh | sh</code><button type="button" class="copy-inline" data-copy="curl -fsSL https://rocsy.rocks/install.sh | sh">Copy</button></div>
       <p class="fine" data-release-meta>Linux installer · Apache-2.0 · Windows via WSL2 (untested)</p>
     </div>
 
@@ -196,17 +197,24 @@
     </div>
     <div class="install">
       <ol class="steps">
-        <li><span>1</span><div><b>Download</b><p>Get <a href="https://github.com/BittyBunnyBytes/Rocsy/releases/latest" data-download><code data-asset-name>rocsy-v1.2-installer.tar.gz</code></a> from the latest release.</p></div></li>
+        <li><span>1</span><div><b>Get the installer</b><p>Run the one-line command, or download <a href="https://github.com/BittyBunnyBytes/Rocsy/releases/latest" data-download><code data-asset-name>rocsy-v1.2-installer.tar.gz</code></a> from the latest release.</p></div></li>
         <li><span>2</span><div><b>Run the installer</b><p>Choose what to install, where, and your password. It asks before changing anything on your system.</p></div></li>
         <li><span>3</span><div><b>Add models</b><p>Open <code>Models</code>, see what fits your GPU and download it. Then start creating.</p></div></li>
       </ol>
       <div class="tabs">
         <div class="tab-list" role="tablist" aria-label="How to run the installer">
-          <button role="tab" id="tab-desktop" aria-controls="panel-desktop" aria-selected="true">Desktop</button>
+          <button role="tab" id="tab-oneline" aria-controls="panel-oneline" aria-selected="true">One line</button>
+          <button role="tab" id="tab-desktop" aria-controls="panel-desktop" aria-selected="false" tabindex="-1">Desktop</button>
           <button role="tab" id="tab-terminal" aria-controls="panel-terminal" aria-selected="false" tabindex="-1">Terminal</button>
           <button role="tab" id="tab-windows" aria-controls="panel-windows" aria-selected="false" tabindex="-1">Windows</button>
         </div>
-        <div role="tabpanel" id="panel-desktop" aria-labelledby="tab-desktop" class="tab-panel">
+        <div role="tabpanel" id="panel-oneline" aria-labelledby="tab-oneline" class="tab-panel">
+          <p>Paste this into a terminal. It fetches the latest installer, checks its checksum and asks the setup questions right there. Nothing to download by hand.</p>
+          <div class="code"><pre><code>curl -fsSL https://rocsy.rocks/install.sh | sh</code></pre><button type="button" class="copy">Copy</button></div>
+          <p>No questions, default install: <code>curl -fsSL https://rocsy.rocks/install.sh | sh -s -- --defaults</code></p>
+          <p class="muted-small"><a href="install.sh">Read the script</a> before you run it, if you like.</p>
+        </div>
+        <div role="tabpanel" id="panel-desktop" aria-labelledby="tab-desktop" class="tab-panel" hidden>
           <p>Extract the download and double-click <b>Install Rocsy</b>. A guided setup opens in your browser.</p>
           <div class="code"><pre><code>tar -xzf rocsy-*-installer.tar.gz
 sh "Rocsy Installer/Install Rocsy.sh"</code></pre><button type="button" class="copy">Copy</button></div>
