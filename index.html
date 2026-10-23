@@ -1,16 +1,275 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101519"><title>Rocsy — Local AI, one shared GPU</title><meta name="description" content="A local AI workspace for AMD GPUs. Coordinate video, images, music, voice and LLMs through a shared GPU queue."><link rel="icon" href="assets/rocsy-service.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css"><script src="app.js" defer></script></head>
-<body><a class="skip" href="#main">Skip to content</a>
-<header class="topbar"><a class="brand" href="#overview"><img src="assets/rocsy-service.svg" width="32" height="32" alt="">Rocsy</a><span class="top-label">LOCAL AI WORKSPACE</span><span class="top-right">AMD / ROCm · Enthusiast built</span></header>
-<div class="shell"><aside class="sidebar"><nav aria-label="Page sections"><p class="nav-label">WORKSPACE</p><a href="#overview" class="selected">▦ <span>Overview</span></a><a href="#queue">≡ <span>GPU queue</span></a><a href="#studios">⊞ <span>Studios</span><small>9</small></a><a href="#architecture">⌘ <span>How it works</span></a><a href="#setup">↳ <span>Self-hosting</span></a></nav><div class="sidebar-note"><span class="nav-label">BUILT ON</span><strong>Radeon RX 7900 XTX</strong><span>24 GB · Linux · gfx1100</span><p>One machine. A shared queue.<br>A workspace you control.</p></div><nav class="project-nav" aria-label="Project links"><p class="nav-label">PROJECT</p><a href="https://ko-fi.com/bittybunnybytes" target="_blank" rel="noopener">♡ <span>Support Rocsy</span><small>↗</small></a><a href="https://github.com/BittyBunnyBytes/Rocsy" target="_blank" rel="noopener">⌘ <span>Source on GitHub</span><small>↗</small></a></nav></aside>
-<main id="main"><section id="overview" class="intro"><div class="breadcrumb">Rocsy / Overview</div><div class="intro-row"><div><p class="eyebrow">YOUR MODELS. YOUR MACHINE.</p><h1>Local AI, without the<br>constant troubleshooting.</h1><p class="intro-copy">Run video, images, music, voice and language models from one workspace. Rocsy coordinates the GPU so you can line up your next idea while the current one renders.</p><div class="actions"><a class="button primary" href="#queue">Explore the queue ↓</a><a class="button" href="#setup">What you need to run it</a></div></div><div class="intro-spec"><img src="assets/rocsy-service.svg" width="72" height="72" alt="Rocsy bird and amber sun"><p>A practical home for<br>AMD-powered AI.</p><span>ROCm · ComfyUI · llama.cpp</span></div></div><div class="value-row"><div><h2>Work stays local</h2><p>Keep model files, datasets and outputs on your host.</p></div><div><h2>One front door</h2><p>A shared login and workspace for your AI services.</p></div><div><h2>A GPU that takes turns</h2><p>Coordinate workloads instead of racing for VRAM.</p></div></div></section>
-<section id="queue"><div class="section-heading"><div><p class="eyebrow">THE CORE OF ROCSY</p><h2>Know what your GPU is doing.</h2></div><span class="demo-label">INTERACTIVE EXAMPLE · NOT LIVE TELEMETRY</span></div><p class="section-copy">See the running job, inspect what comes next, and handle a failed job with useful diagnostic information.</p>
-<div class="workbench"><div class="workspace-bar"><strong>GPU queue</strong><div class="workspace-actions"><button id="reset" class="text-button" type="button">Reset example</button><button id="advance" class="button primary compact" type="button">Complete running job</button></div></div>
-<div class="gpu-strip"><div><span class="field-label">DEVICE</span><strong>Radeon RX 7900 XTX</strong><small>ROCm / gfx1100</small></div><div><span class="field-label">STATE</span><strong id="gpu-state" class="running">● Rendering</strong><small id="gpu-hint">One active workload</small></div><div><span class="field-label">VRAM · SAMPLE</span><strong id="vram">19.6 <span>/ 24 GB</span></strong><meter id="vram-meter" min="0" max="24" value="19.6" aria-label="Sample VRAM usage"></meter></div><div><span class="field-label">ELAPSED · SAMPLE</span><strong id="elapsed">03:42</strong><small>Timing depends on the workload</small></div></div>
-<div class="queue-layout"><div class="jobs-panel"><div class="table-title"><strong>Workloads</strong><span id="job-count"></span></div><div class="job-columns" aria-hidden="true"><span>ORDER / TYPE</span><span>JOB / MODEL</span><span>STATUS</span></div><div id="jobs" role="list" aria-label="Example GPU jobs"></div></div><aside class="job-detail" aria-labelledby="detail-heading"><div class="detail-title"><span class="field-label">SELECTED JOB</span><h3 id="detail-heading"></h3></div><dl id="details"></dl><div id="diagnostic"></div><button type="button" id="retry" class="button" hidden>Retry in example</button><p class="detail-note">These controls demonstrate queue behavior locally. They do not start GPU workloads.</p></aside></div><div class="workbench-footer"><span>GPU access is coordinated across studios.</span><span>FIFO · priorities · expiring locks</span></div></div>
-<div class="queue-explanation"><div><h3>A clean handoff</h3><p>A busy GPU returns a lock response. The next studio waits instead of starting over the active job.</p></div><div><h3>Recover after a crash</h3><p>Locks have a time limit. An abandoned lock can expire instead of leaving the workspace stuck.</p></div><div><h3>Less babysitting</h3><p>Track running and waiting jobs in one place, with push notifications when work finishes.</p></div></div></section>
-<section id="studios"><div class="section-heading"><div><p class="eyebrow">CREATE / RUN / MANAGE</p><h2>A workspace for the whole workflow.</h2></div><label class="search"><span class="sr-only">Search studios and models</span><span aria-hidden="true">⌕</span><input id="studio-search" type="search" placeholder="Search studios or models…" autocomplete="off"></label></div><p class="section-copy">Focused interfaces over shared infrastructure. Search a capability or model, then open a studio’s details.</p><div id="studio-list" class="studio-list"></div><p id="no-studios" class="empty" hidden>No studios match that search. Try “video”, “LoRA” or “voice”.</p></section>
-<section id="architecture"><div class="section-heading"><div><p class="eyebrow">UNDER THE HOOD</p><h2>Shared infrastructure. Fewer moving parts.</h2></div></div><div class="architecture"><div class="topology" aria-label="Rocsy architecture"><div>Browser <span>One password-protected gateway</span></div><p aria-hidden="true">↓</p><div>Studios + GPU queue <span>FastAPI services / Docker Compose</span></div><p aria-hidden="true">↓</p><div>Host-native backends <span>ComfyUI · llama.cpp · ROCm</span></div><small>Optional remote access through Cloudflare Tunnel.</small></div><div class="architecture-copy"><h3>Containers coordinate. The host computes.</h3><p>GPU-heavy backends run natively on Linux. The services around them handle jobs, media operations and the shared gateway.</p><h3>Your files remain accessible.</h3><p>Outputs, logs and datasets are bind-mounted on the host. Downloads feed a shared model library instead of separate copies for every studio.</p><h3>Built around real AMD hardware.</h3><p>Developed on a 24 GB RX 7900 XTX, with an RDNA-tuned llama.cpp build and per-model inference controls. Other hardware needs its own compatibility check.</p></div></div></section>
-<section id="setup"><div class="section-heading"><div><p class="eyebrow">SELF-HOSTING</p><h2>Bring your GPU. Keep control.</h2></div></div><div class="setup-grid"><div><p class="section-copy">Rocsy is a self-hosted workspace. It grew out of getting local generation running reliably on a Radeon card.</p><ul class="requirements"><li><strong>Linux + a compatible AMD GPU</strong><span>ROCm support and VRAM requirements depend on your card and models.</span></li><li><strong>Docker Compose + host backends</strong><span>ComfyUI and llama.cpp run alongside coordinating services.</span></li><li><strong>Storage for models and outputs</strong><span>Video models and training datasets can need substantial disk space.</span></li></ul></div><div class="setup-details"><details open><summary>How the stack starts</summary><p>With the service source and host dependencies installed, configure the environment and start the services:</p><pre><code>cp .env.example .env
-docker compose up -d --build</code></pre><p class="muted">Set your gateway password and service secrets first. This is an overview, not a complete installation guide.</p></details><details><summary>Optional LoRA training</summary><p>The Trainer uses a separate Compose profile. Its ROCm image is large, and training shares the GPU’s memory budget.</p><pre><code>docker compose --profile trainer up -d --build trainer</code></pre></details><details><summary>Network access and local data</summary><p>Model downloads, remote access and optional integrations may use external services. Local inference and host storage stay under your control.</p></details></div></div></section>
-<section class="project-note"><div><p class="eyebrow">BUILT BY BITTYBUNNYBYTES</p><h2>One developer. One very busy Radeon.</h2><p>Rocsy started with a month of ROCm setup and compatibility fixes. The goal: more time creating, less time managing backends.</p></div><div class="project-actions"><a class="button primary" href="https://github.com/BittyBunnyBytes/Rocsy" target="_blank" rel="noopener">View the source on GitHub ↗</a><a class="button" href="https://ko-fi.com/bittybunnybytes" target="_blank" rel="noopener">Support on Ko-fi ↗</a></div></section><footer><span>Rocsy · Local AI workspace</span><span>Linux / AMD / ROCm</span><span class="footer-links"><a href="https://github.com/BittyBunnyBytes/Rocsy" target="_blank" rel="noopener">GitHub ↗</a><a href="#overview">Back to overview ↑</a></span></footer></main></div><div id="announcement" class="sr-only" role="status" aria-live="polite"></div></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f1519">
+<title>Rocsy — AI on AMD, made easier</title>
+<meta name="description" content="Rocsy is a free, self-hosted AI studio for AMD GPUs: video, images, music, voice, LoRA training and local LLMs behind one login, sharing one GPU queue.">
+<meta property="og:title" content="Rocsy — AI on AMD, made easier">
+<meta property="og:description" content="Video, images, music, voice, LoRA training and local LLMs on your own AMD GPU. Free and open source.">
+<meta property="og:image" content="https://rocsy.rocks/assets/rocsy-v2-512.png">
+<meta property="og:url" content="https://rocsy.rocks/">
+<link rel="icon" href="assets/rocsy-service.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/rocsy-v2-touch-180.png">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="#top"><img src="assets/rocsy-service.svg" width="30" height="30" alt="">Rocsy</a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav id="site-nav" class="site-nav" aria-label="Main">
+      <a href="#studios">Studios</a>
+      <a href="#agent">Agent</a>
+      <a href="#how">How it works</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a class="nav-github" href="https://github.com/BittyBunnyBytes/Rocsy" target="_blank" rel="noopener">GitHub ↗</a>
+      <a class="btn btn-primary btn-small" href="https://github.com/BittyBunnyBytes/Rocsy/releases/latest" data-download>Download</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section id="top" class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot"></span> Free &amp; open source · <span data-release-tag>v1.2</span> is out</p>
+      <h1>AI on AMD,<br><span class="accent">made easier.</span></h1>
+      <p class="lede">Rocsy is a self-hosted AI studio for your own Radeon GPU. Make videos, images, music and voices, train LoRAs and chat with local LLMs, all behind one login and sharing one GPU queue, so nothing fights over VRAM.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/BittyBunnyBytes/Rocsy/releases/latest" data-download>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download the installer
+        </a>
+        <a class="btn btn-kofi" href="https://ko-fi.com/bittybunnybytes" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" fill="currentColor"/></svg>
+          Donate on Ko-fi
+        </a>
+      </div>
+      <p class="fine" data-release-meta>Linux installer · Apache-2.0 · Windows via WSL2 (untested)</p>
+    </div>
+
+    <div class="mock" aria-label="Illustration of the Rocsy home page">
+      <div class="mock-bar"><span></span><span></span><span></span><em>rocsy · home</em></div>
+      <div class="mock-body">
+        <div class="mock-studios">
+          <div class="mock-card c-video"><img src="assets/service-vid.svg" alt=""><b>Video</b><small>/Video</small></div>
+          <div class="mock-card c-image"><img src="assets/service-krea.svg" alt=""><b>Image</b><small>/Image</small></div>
+          <div class="mock-card c-music"><img src="assets/service-mus.svg" alt=""><b>Music</b><small>/Music</small></div>
+          <div class="mock-card c-voice"><img src="assets/service-voice.svg" alt=""><b>Voice</b><small>/Voice</small></div>
+        </div>
+        <div class="mock-queue">
+          <div class="mock-queue-head"><b>GPU queue</b><span class="pill live">● 1 running</span></div>
+          <ol id="mock-jobs">
+            <li class="running"><span class="tag t-video">Video</span><span class="job">Ocean cliffs at dusk · 10 s</span><span class="state">rendering</span><span class="bar"><i></i></span></li>
+            <li><span class="tag t-image">Image</span><span class="job">Poster, 4 variations</span><span class="state">waiting</span></li>
+            <li><span class="tag t-music">Music</span><span class="job">Lo-fi loop · 2 min</span><span class="state">waiting</span></li>
+          </ol>
+          <p class="mock-note">Example only. Each job gets the GPU in turn.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="strip" aria-label="Highlights">
+  <div class="wrap strip-grid">
+    <div><b>One login</b><span>Every studio behind a single password-protected gateway</span></div>
+    <div><b>One GPU queue</b><span>Jobs take turns instead of crashing each other</span></div>
+    <div><b>Stays local</b><span>Models, outputs and datasets live on your disk</span></div>
+    <div><b>Built on a 7900 XTX</b><span>Tuned for RDNA3, made for ROCm</span></div>
+  </div>
+</section>
+
+<section id="studios" class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Studios</p>
+      <h2>Everything you make, in one place.</h2>
+      <p class="section-lede">Each studio has its own page, presets and job history. They all share the same models library, notifications and GPU queue.</p>
+    </div>
+    <div class="studio-grid">
+      <article class="studio c-video">
+        <header><img src="assets/service-vid.svg" alt=""><h3>Video</h3><code>/Video</code></header>
+        <p>Text, keyframe and full-reference video with audio. Agentic mode plans multi-clip videos, reviews each take and fixes it. Post-Edit adds captions, voice-over and music.</p>
+        <ul class="models"><li>MiniMax H3</li><li>LTX 2.5</li><li>Wan 2.2</li></ul>
+      </article>
+      <article class="studio c-image">
+        <header><img src="assets/service-krea.svg" alt=""><h3>Image</h3><code>/Image</code></header>
+        <p>Text-to-image and edits with reference pictures, a LoRA gallery and an optional prompt planner that tries, reviews and keeps the best result.</p>
+        <ul class="models"><li>Krea 2</li><li>MOSS-Image</li><li>Qwen Image 2.1</li><li>Anima</li></ul>
+      </article>
+      <article class="studio c-music">
+        <header><img src="assets/service-mus.svg" alt=""><h3>Music</h3><code>/Music</code></header>
+        <p>Full songs from a style prompt and lyrics, or instrumentals. Agentic mode writes the lyrics and checks the rendered track.</p>
+        <ul class="models"><li>YuE2</li><li>MiniMax Music 3</li></ul>
+      </article>
+      <article class="studio c-voice">
+        <header><img src="assets/service-voice.svg" alt=""><h3>Voice</h3><code>/Voice</code></header>
+        <p>Text to speech with saved characters. Clone a voice from a short clip or design a new one from a description.</p>
+        <ul class="models"><li>Qwen3-TTS</li><li>IndexTTS2</li><li>Fish S2 Pro</li><li>Fish Audio Drama 3</li></ul>
+      </article>
+      <article class="studio c-trainer">
+        <header><img src="assets/service-trainer.svg" alt=""><h3>Trainer</h3><code>/Trainer</code></header>
+        <p>Train your own LoRAs on ROCm. Datasets with auto-tagging, per-model recipes and finished LoRAs straight into the studios' galleries.</p>
+        <ul class="models"><li>Optional install</li></ul>
+      </article>
+      <article class="studio c-llama">
+        <header><img src="assets/service-llama.svg" alt=""><h3>LLM server</h3><code>/Llama</code></header>
+        <p>llama.cpp behind llama-swap with per-model parameters. Build optimized RDNA versions from the app and switch builds without a terminal.</p>
+        <ul class="models"><li>llama.cpp</li><li>RDNA Boost builds</li><li>Vulkan or ROCm</li></ul>
+      </article>
+      <article class="studio c-models">
+        <header><img src="assets/service-models.svg" alt=""><h3>Models</h3><code>/Models</code></header>
+        <p>Search Civitai and Hugging Face, see whether a model fits your VRAM, pick the best quant and get notified about updates. Also installs ComfyUI, voice engines and backends.</p>
+        <ul class="models"><li>Hardware fit</li><li>Update checks</li><li>Core Backend</li></ul>
+      </article>
+      <article class="studio c-queue">
+        <header><img src="assets/service-queue.svg" alt=""><h3>Queue</h3><code>/Queue</code></header>
+        <p>Every GPU job from every studio waits in one line. Cancel, reorder and get a push notification when your turn starts or your render finishes.</p>
+        <ul class="models"><li>Shared lock</li><li>Push alerts</li></ul>
+      </article>
+    </div>
+    <p class="more">Also inside: <b>RAG &amp; Cache</b> for pinned files the agent can use, <b>Vibe Coding</b> and <b>Reverse Engineer Anything</b> <span class="badge">experimental</span>.</p>
+  </div>
+</section>
+
+<section id="agent" class="section section-alt">
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow">Master Agent</p>
+      <h2>Ask for the result, not the steps.</h2>
+      <p class="section-lede">The Master Agent is a local Hermes agent that drives every studio for you. Describe a short film, a music video or a set of product shots. It plans the work, queues each render, looks at the results and redoes what didn't come out right.</p>
+      <ul class="checks">
+        <li>Runs on your own LLM through llama.cpp</li>
+        <li>Uses the studios' Agentic modes for videos, images and songs</li>
+        <li>Edits frame-exact cuts, adds soundtracks and captions</li>
+        <li>Asks before it touches anything you've set to "ask first"</li>
+      </ul>
+    </div>
+    <div class="chat" aria-label="Example conversation with the Master Agent">
+      <div class="msg user">Make a 20-second teaser of a paper boat sailing through a rainy city, with a calm piano track.</div>
+      <div class="msg agent">
+        <b>Plan</b>
+        <ol>
+          <li>Video · 2 clips, continuation at the cut</li>
+          <li>Music · piano, 20 s, no vocals</li>
+          <li>Edit · join clips, add the track, fade out</li>
+        </ol>
+        <span class="chips"><span class="chip c-video">Video ✓</span><span class="chip c-music">Music ✓</span><span class="chip">Edit…</span></span>
+      </div>
+      <p class="mock-note">Illustration. Real runs show live progress, previews and every step.</p>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">How it works</p>
+      <h2>Containers coordinate. Your GPU computes.</h2>
+    </div>
+    <div class="layers">
+      <div class="layer"><span class="layer-n">1</span><div><h3>One gateway</h3><p>A single password-protected web app. Open it on your PC, or from your phone through an optional Cloudflare tunnel.</p></div></div>
+      <div class="layer"><span class="layer-n">2</span><div><h3>Studios and the GPU queue</h3><p>Small services in Docker Compose. They take your requests, line up GPU work and keep your history.</p></div></div>
+      <div class="layer"><span class="layer-n">3</span><div><h3>Native GPU backends</h3><p>ComfyUI and llama.cpp run on the host with ROCm, so they get the whole card. A host helper starts, stops and updates them for you.</p></div></div>
+    </div>
+    <div class="facts">
+      <div><b>Your files stay yours</b><p>Outputs, uploads, models and datasets are ordinary folders on your disk. Nothing is uploaded unless you set it up.</p></div>
+      <div><b>One models library</b><p>Download a model once; every studio that can use it sees it. Add more drives in Settings → Storage.</p></div>
+      <div><b>Safe updates</b><p>Backends update only while nothing is running, and you can always roll back to the previous build.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="section section-alt">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Install</p>
+      <h2>From download to first render.</h2>
+      <p class="section-lede">The installer sets up Docker, the services and, if you want, ComfyUI and the agent. Then you pick models inside Rocsy.</p>
+    </div>
+    <div class="install">
+      <ol class="steps">
+        <li><span>1</span><div><b>Download</b><p>Get <a href="https://github.com/BittyBunnyBytes/Rocsy/releases/latest" data-download><code data-asset-name>rocsy-v1.2-installer.tar.gz</code></a> from the latest release.</p></div></li>
+        <li><span>2</span><div><b>Run the installer</b><p>Choose what to install, where, and your password. It asks before changing anything on your system.</p></div></li>
+        <li><span>3</span><div><b>Add models</b><p>Open <code>Models</code>, see what fits your GPU and download it. Then start creating.</p></div></li>
+      </ol>
+      <div class="tabs">
+        <div class="tab-list" role="tablist" aria-label="How to run the installer">
+          <button role="tab" id="tab-desktop" aria-controls="panel-desktop" aria-selected="true">Desktop</button>
+          <button role="tab" id="tab-terminal" aria-controls="panel-terminal" aria-selected="false" tabindex="-1">Terminal</button>
+          <button role="tab" id="tab-windows" aria-controls="panel-windows" aria-selected="false" tabindex="-1">Windows</button>
+        </div>
+        <div role="tabpanel" id="panel-desktop" aria-labelledby="tab-desktop" class="tab-panel">
+          <p>Extract the download and double-click <b>Install Rocsy</b>. A guided setup opens in your browser.</p>
+          <div class="code"><pre><code>tar -xzf rocsy-*-installer.tar.gz
+sh "Rocsy Installer/Install Rocsy.sh"</code></pre><button type="button" class="copy">Copy</button></div>
+        </div>
+        <div role="tabpanel" id="panel-terminal" aria-labelledby="tab-terminal" class="tab-panel" hidden>
+          <p>Same questions in the terminal. Press Enter for the defaults, or add <code>--defaults</code> to skip them.</p>
+          <div class="code"><pre><code>tar -xzf rocsy-*-installer.tar.gz
+sh "Rocsy Installer/Install Rocsy.sh" --terminal</code></pre><button type="button" class="copy">Copy</button></div>
+        </div>
+        <div role="tabpanel" id="panel-windows" aria-labelledby="tab-windows" class="tab-panel" hidden>
+          <p>On Windows 10 (2004 or newer) and 11, run <b>Install Rocsy (Windows).cmd</b>. It sets up WSL2 and installs Rocsy inside it. <b>This path is untested</b>; Linux is the supported way.</p>
+        </div>
+      </div>
+    </div>
+    <div class="reqs">
+      <div><b>System</b><p>Linux with an AMD GPU that ROCm supports. Arch, Ubuntu, Debian, Fedora, openSUSE and more: the installer uses your package manager.</p></div>
+      <div><b>GPU memory</b><p>Developed on a 24 GB RX 7900 XTX. Smaller cards work with smaller models; Models shows what fits.</p></div>
+      <div><b>Disk space</b><p>Video models and LoRA datasets are large. Plan on hundreds of GB if you want every studio.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="support" class="section">
+  <div class="wrap support">
+    <img src="assets/rocsy-service.svg" width="72" height="72" alt="">
+    <div>
+      <h2>Made by one developer and one very busy Radeon.</h2>
+      <p>Rocsy is free and open source. If it saves you an evening of fighting ROCm, a coffee keeps the updates coming.</p>
+    </div>
+    <div class="support-actions">
+      <a class="btn btn-kofi" href="https://ko-fi.com/bittybunnybytes" target="_blank" rel="noopener">Donate on Ko-fi</a>
+      <a class="btn" href="https://github.com/BittyBunnyBytes/Rocsy" target="_blank" rel="noopener">Star on GitHub ↗</a>
+    </div>
+  </div>
+</section>
+
+<section id="faq" class="section section-alt">
+  <div class="wrap narrow">
+    <div class="section-head">
+      <p class="eyebrow">FAQ</p>
+      <h2>Questions</h2>
+    </div>
+    <details><summary>Does it work on NVIDIA?</summary><p>Rocsy is built and tested for AMD GPUs with ROCm. Some parts may run elsewhere, but NVIDIA isn't supported.</p></details>
+    <details><summary>Which AMD cards?</summary><p>It's developed on an RX 7900 XTX (RDNA3). Other cards that ROCm supports should work. The LLM server can build llama.cpp for your card's GPU target, and Models checks what fits in your VRAM.</p></details>
+    <details><summary>Are models included?</summary><p>No. The installer is a few MB. You download the models you want from inside Rocsy, from Hugging Face or Civitai.</p></details>
+    <details><summary>Is anything sent to the cloud?</summary><p>Generation runs on your GPU. Model downloads, optional web search by the agent, and the optional Cloudflare tunnel use the internet; everything else stays on your machine.</p></details>
+    <details><summary>Can I use it from my phone?</summary><p>Yes. Set up a Cloudflare tunnel on the Connections page and log in from anywhere. Push notifications tell you when a render finishes.</p></details>
+    <details><summary>How do I update?</summary><p>Run a newer installer and choose Update; your settings, history and models are kept. Backends like ComfyUI and llama.cpp update from Models → Manager.</p></details>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-row">
+    <span class="brand small"><img src="assets/rocsy-service.svg" width="22" height="22" alt="">Rocsy</span>
+    <span>AI on AMD, made easier · Apache-2.0</span>
+    <span class="footer-links">
+      <a href="https://github.com/BittyBunnyBytes/Rocsy" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/BittyBunnyBytes/Rocsy/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="https://ko-fi.com/bittybunnybytes" target="_blank" rel="noopener">Ko-fi</a>
+    </span>
+  </div>
+</footer>
+<div id="announce" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>
